@@ -1,0 +1,15 @@
+# Netlify configuration for Weitblick
+#
+# publish = "site" is the important line. Only that folder is uploaded, which
+# keeps serve.py (it carries the API key) and Evidence-Sources (publisher PDFs)
+# off the public site. Never change this to "." .
+
+[build]
+  publish = "site"
+  functions = "netlify/functions"
+
+# Open the dashboard at the site root
+[[redirects]]
+  from = "/"
+  to = "/quantiva.html"
+  status = 200

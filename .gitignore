@@ -1,0 +1,12 @@
+# macOS
+.DS_Store
+
+# Netlify / tooling
+node_modules
+.netlify
+
+# Local FRED key, if ever placed in the folder
+.fred_api_key
+
+# Copyrighted publisher material — reference only, must not be published
+Evidence-Sources/
