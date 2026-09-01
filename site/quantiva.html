@@ -122,6 +122,18 @@ body {
   min-width: calc(var(--sidebar-width) - 16px);
   padding-left: 4px;
 }
+
+/* Hamburger — only rendered below 900px (see RESPONSIVE block) */
+.menu-toggle {
+  display: none;
+  align-items: center; justify-content: center;
+  width: 40px; height: 40px; flex-shrink: 0;
+  border: none; background: transparent; cursor: pointer;
+  border-radius: 50%; color: var(--text-secondary);
+}
+.menu-toggle:hover { background: var(--hover); }
+.menu-toggle svg { width: 22px; height: 22px; }
+.sidebar-backdrop { display: none; }
 .brand-icon {
   width: 34px; height: 34px;
   border-radius: 50%;
@@ -1216,9 +1228,31 @@ body {
    ============================================================ */
 @media (max-width: 1100px) { .card-grid { grid-template-columns: 1fr; } }
 @media (max-width: 900px) {
-  .sidebar { display: none; }
+  .menu-toggle { display: flex; }
   .topbar-brand { min-width: auto; }
   .content-area, .page-footer { padding-left: 16px; padding-right: 16px; }
+
+  /* Left nav turns into an off-canvas drawer, opened by the hamburger */
+  .sidebar {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    height: 100%;
+    z-index: 200;
+    transform: translateX(-100%);
+    transition: transform .22s ease;
+    box-shadow: 0 0 24px rgba(32,33,36,.28);
+    padding-top: 16px;
+  }
+  .sidebar.open { transform: translateX(0); }
+  .sidebar-backdrop {
+    display: block;
+    position: fixed; inset: 0;
+    background: rgba(32,33,36,.45);
+    opacity: 0; pointer-events: none;
+    transition: opacity .22s ease;
+    z-index: 199;
+  }
+  .sidebar-backdrop.open { opacity: 1; pointer-events: auto; }
 }
 </style>
 </head>
@@ -1231,6 +1265,9 @@ body {
 </div>
 
 <div class="topbar">
+  <button class="menu-toggle" id="menu-toggle" aria-label="Open sections menu" aria-expanded="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+  </button>
   <div class="topbar-brand">
     <div class="brand-icon">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
@@ -1259,6 +1296,7 @@ body {
 </div>
 
 <div class="shell">
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
   <!-- ===== SIDEBAR ===== -->
   <nav class="sidebar">
     <div class="nav-item active" data-tab="cost">
@@ -2571,6 +2609,19 @@ document.querySelectorAll('.nav-item').forEach(btn => {
     requestAnimationFrame(() => { if (typeof alignNewsMarkers === 'function') alignNewsMarkers(); });
   });
 });
+
+// ===== MOBILE DRAWER (<=900px) — no effect on desktop =====
+(function () {
+  const tog = document.getElementById('menu-toggle');
+  const side = document.querySelector('.sidebar');
+  const back = document.getElementById('sidebar-backdrop');
+  if (!tog || !side || !back) return;
+  const open = () => { side.classList.add('open'); back.classList.add('open'); tog.setAttribute('aria-expanded', 'true'); };
+  const close = () => { side.classList.remove('open'); back.classList.remove('open'); tog.setAttribute('aria-expanded', 'false'); };
+  tog.addEventListener('click', () => side.classList.contains('open') ? close() : open());
+  back.addEventListener('click', close);
+  side.querySelectorAll('.nav-item').forEach(n => n.addEventListener('click', close));
+})();
 
 // ===== TIME-RANGE SELECTOR =====
 document.querySelectorAll('#range-chips button').forEach(b => {
