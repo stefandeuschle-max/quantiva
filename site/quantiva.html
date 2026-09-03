@@ -73,12 +73,7 @@ body {
   background: var(--bg-subtle); border-bottom: 1px solid var(--divider);
   position: sticky; top: 0; z-index: 101; overflow: hidden;
 }
-.ticker-label {
-  flex: none; display: flex; align-items: center; padding: 0 12px;
-  background: var(--text-primary); color: #fff;
-  font-size: 9.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
-}
-.ticker-view { flex: 1 1 auto; overflow: hidden; position: relative; }
+.ticker-view { flex: 1 1 auto; overflow: hidden; position: relative; padding-left: 16px; }
 .ticker-track {
   display: flex; align-items: center; height: 100%; width: max-content;
   animation: tickerRoll var(--dur, 70s) linear infinite;
@@ -134,6 +129,7 @@ body {
 .menu-toggle:hover { background: var(--hover); }
 .menu-toggle svg { width: 22px; height: 22px; }
 .sidebar-backdrop { display: none; }
+
 .brand-icon {
   width: 34px; height: 34px;
   border-radius: 50%;
@@ -461,18 +457,91 @@ body {
 
 /* The table is wider than the card on narrow viewports, so it scrolls in its own
    container rather than pushing the page sideways. */
-#atlas-table { overflow-x: auto; }
-.atlas-tbl { width: 100%; min-width: 1620px; border-collapse: collapse; font-size: 13px; }
+#atlas-table {
+  overflow: auto;
+  max-height: calc(100vh - 330px);
+  min-height: 320px;
+  overscroll-behavior: contain;
+}
+.atlas-tbl { width: 100%; min-width: 1760px; border-collapse: collapse; font-size: 13px; }
+.atlas-tbl .c-sector { white-space: nowrap; font-weight: 500; color: var(--text-primary); }
+
+/* Add to segment: one checkbox per segment, so an indicator can appear in all three */
+.atlas-tbl .c-seg { white-space: nowrap; }
+.seg-box {
+  display: inline-flex; align-items: center; gap: 4px; cursor: pointer;
+  margin-right: 8px; font-size: 11.5px; color: var(--text-secondary);
+}
+.seg-box:last-child { margin-right: 0; }
+.seg-box input { accent-color: var(--g-blue); margin: 0; }
+.seg-box input:disabled + span { color: var(--card-border); }
+.seg-box:hover span { color: var(--text-primary); }
+.seg-box input:checked + span { color: var(--g-blue); font-weight: 600; }
+
+/* ---- Excel-style column filters ------------------------------------- */
+/* position comes from the sticky rule further down; sticky is also the containing
+   block the filter button anchors to */
+.atlas-tbl thead th { padding-right: 26px; }
+.atlas-tbl thead th.col-filtered { background: var(--g-blue-bg); color: #1a4f7a; }
+.th-label { display: inline-block; vertical-align: middle; }
+.th-filter {
+  position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+  width: 17px; height: 17px; padding: 0; border: 1px solid transparent; border-radius: 3px;
+  background: none; cursor: pointer; color: var(--text-tertiary);
+  display: grid; place-items: center;
+}
+.th-filter svg { width: 10px; height: 10px; fill: currentColor; }
+.th-filter:hover { background: var(--card); border-color: var(--card-border); color: var(--text-primary); }
+.th-filter.on { color: var(--g-blue); background: var(--card); border-color: var(--g-blue); }
+.th-filter[aria-expanded="true"] { background: var(--card); border-color: var(--g-blue); color: var(--g-blue); }
+
+.col-panel {
+  position: absolute; z-index: 500; width: 244px;
+  background: var(--card); border: 1px solid var(--card-border); border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(60,64,67,.15), 0 12px 28px rgba(60,64,67,.2);
+  padding: 8px; font-size: 12.5px;
+}
+.cp-head {
+  font-size: 9.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--text-tertiary); padding: 2px 4px 6px;
+}
+.cp-search {
+  width: 100%; font-family: var(--font); font-size: 12.5px; padding: 5px 8px;
+  border: 1px solid var(--card-border); border-radius: 6px; background: var(--bg-subtle);
+  color: var(--text-primary); margin-bottom: 6px;
+}
+.cp-search:focus { outline: none; border-color: var(--g-blue); background: var(--card); }
+.cp-list { max-height: 232px; overflow-y: auto; border-top: 1px solid var(--divider); padding-top: 4px; }
+.cp-row {
+  display: flex; align-items: center; gap: 7px; padding: 3px 4px; border-radius: 4px;
+  cursor: pointer; color: var(--text-secondary); line-height: 1.35;
+}
+.cp-row:hover { background: var(--hover); }
+.cp-row span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cp-row em { font-style: normal; font-size: 10.5px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+.cp-row input { flex: none; accent-color: var(--g-blue); }
+.cp-all { font-weight: 600; color: var(--text-primary); padding-bottom: 5px; }
+.cp-foot {
+  display: flex; align-items: center; justify-content: space-between;
+  border-top: 1px solid var(--divider); margin-top: 6px; padding-top: 6px;
+}
+.cp-clear {
+  font-family: var(--font); font-size: 12px; color: var(--g-blue);
+  background: none; border: none; padding: 2px 4px; cursor: pointer; border-radius: 4px;
+}
+.cp-clear:hover { background: var(--g-blue-bg); }
+.cp-count { font-size: 11px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
 .atlas-tbl .c-verdict { white-space: nowrap; }
 .atlas-tbl .c-verdict .cyc, .atlas-tbl .c-verdict .evid, .atlas-tbl .c-verdict .vin,
 .atlas-tbl .c-verdict .meth { font-size: 10.5px; padding: 2px 7px; }
 .atlas-tbl .unrev { font-size: 11.5px; color: var(--text-tertiary); font-style: italic; }
-.atlas-tbl th:nth-child(2), .atlas-tbl td:nth-child(2) { min-width: 260px; }
+.atlas-tbl .c-ind { min-width: 260px; }
 .atlas-tbl thead th {
   text-align: left; padding: 12px 14px; background: var(--bg-subtle);
   font-size: 11px; font-weight: 600; color: var(--text-secondary);
   text-transform: uppercase; letter-spacing: .4px;
   border-bottom: 1px solid var(--card-border); white-space: nowrap;
+  position: sticky; top: 0; z-index: 3;      /* stays put while the body scrolls */
 }
 .atlas-tbl tbody td { padding: 11px 14px; border-bottom: 1px solid var(--divider); color: var(--text-secondary); vertical-align: middle; }
 .atlas-tbl tbody tr:last-child td { border-bottom: none; }
@@ -536,11 +605,13 @@ body {
    mid = coincident, late = lags. Two hollow dots = contested.
    ============================================================ */
 .cyc {
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; gap: 5px;
   font-size: 11px; font-weight: 600; letter-spacing: .01em;
-  padding: 3px 9px 3px 6px; border-radius: 12px; white-space: nowrap;
+  padding: 3px 9px 3px 7px; border-radius: 12px; white-space: nowrap;
 }
-.cyc svg { width: 20px; height: 20px; flex: none; }
+/* Was 20px, which made this the only chip standing 26px tall while every other
+   chip in the row was 19px. Matched to the collection-method chip. */
+.cyc svg { width: 13px; height: 13px; flex: none; }
 .cyc .wv { fill: none; stroke: currentColor; stroke-width: 1.6; opacity: .55; }
 .cyc .mk { fill: currentColor; }
 .cyc .mk-o { fill: none; stroke: currentColor; stroke-width: 1.6; }
@@ -625,6 +696,7 @@ body {
   background: transparent;
   color: var(--text-tertiary);
   border: 1px dashed var(--card-border);
+  padding: 2px 8px;                 /* the border adds the 2px back, so this lands at 19 */
   font-weight: 400;
   font-style: italic;
   letter-spacing: .1px;
@@ -1077,13 +1149,9 @@ body {
   padding: 3px 9px 3px 6px; border-radius: 12px; cursor: pointer;
   color: #1a4f7a; background: var(--g-blue-bg);
 }
-.news-dot svg { width: 14px; height: 14px; flex: none; opacity: .75; }
+.news-dot svg { width: 13px; height: 13px; flex: none; opacity: .75; }
 .news-dot .nd-date { font-weight: 500; opacity: .8; font-variant-numeric: tabular-nums; }
 .news-dot .nd-date::before { content: '·'; margin-right: 5px; opacity: .55; }
-.news-dot .nd-n {
-  background: currentColor; color: var(--card); border-radius: 7px; padding: 0 5px;
-  font-size: 9.5px; font-weight: 700; line-height: 14px;
-}
 .news-dot::after { content: '›'; margin-left: 1px; opacity: .55; font-weight: 600; }
 .news-dot:hover, .news-dot[aria-expanded="true"] { filter: brightness(.94); text-decoration: underline; }
 /* Published within the last seven days: the red tier, with a pulsing dot.
@@ -1260,7 +1328,6 @@ body {
 
 <!-- ===== TOP BAR ===== -->
 <div class="ticker" id="ticker" aria-label="Most recently updated indicators">
-  <div class="ticker-label">Latest</div>
   <div class="ticker-view"><div class="ticker-track" id="ticker-track"></div></div>
 </div>
 
@@ -1850,51 +1917,14 @@ body {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
             <input type="text" id="atlas-q" placeholder="Search indicator, series ID or source">
           </label>
-          <select id="atlas-sector" class="atlas-sel" aria-label="Filter by sector"><option value="">All sectors</option></select>
-          <select id="atlas-geo" class="atlas-sel" aria-label="Filter by country"><option value="">All countries</option></select>
-          <select id="atlas-status" class="atlas-sel" aria-label="Filter by availability">
-            <option value="">All statuses</option>
-            <option value="live">Live &amp; current</option>
-            <option value="lag">Lagging</option>
-            <option value="none">No free source</option>
-          </select>
-          <select id="atlas-meth" class="atlas-sel" aria-label="Filter by how the indicator is collected">
-            <option value="">All collection methods</option>
-            <option value="act">Recorded activity</option>
-            <option value="opin">Stated opinion</option>
-            <option value="mkt">Market price</option>
-            <option value="mdl">Model output</option>
-            <option value="none">Not classified</option>
-          </select>
-          <select id="atlas-cyc" class="atlas-sel" aria-label="Filter by cycle position">
-            <option value="">All cycle positions</option>
-            <option value="lead">Leading</option>
-            <option value="coin">Coincident</option>
-            <option value="lag">Lagging</option>
-            <option value="cont">Contested</option>
-            <option value="none">Not reviewed</option>
-          </select>
-          <select id="atlas-evid" class="atlas-sel" aria-label="Filter by evidence strength">
-            <option value="">All evidence strengths</option>
-            <option value="evid-strong">Strong evidence</option>
-            <option value="evid-solid">Solid evidence</option>
-            <option value="evid-partial">Mixed / indirect evidence</option>
-            <option value="none">Not reviewed</option>
-          </select>
-          <select id="atlas-vin" class="atlas-sel" aria-label="Filter by evidence vintage">
-            <option value="">All evidence vintages</option>
-            <option value="vin-now">Current evidence (2021+)</option>
-            <option value="vin-dated">Dated evidence (2010-2020)</option>
-            <option value="vin-old">Older evidence (before 2010)</option>
-            <option value="none">Not reviewed</option>
-          </select>
+          <button class="btn-ghost" id="atlas-clearfilters" hidden>Clear filters</button>
           <div class="atlas-spacer"></div>
           <span class="atlas-count" id="atlas-count">0 selected</span>
           <button class="btn-ghost" id="atlas-clear">Clear all</button>
         </div>
 
         <div class="mp-card full" style="padding:0;overflow:hidden">
-          <div id="atlas-table"></div>
+          <div id="atlas-table" tabindex="0" aria-label="Indicator table, scrolls in both directions"></div>
         </div>
       </div>
 
@@ -2823,8 +2853,27 @@ function autoBadge(chart) {
     head.appendChild(el);
   }
   el.dataset.auto = '1';
+  el.title = note === 'YoY'
+    ? 'Change against the same month a year earlier, at the newest reading'
+    : 'Change over the period shown, at the newest reading';
   el.innerHTML = `<div class="mz-pct" style="color:${col}">${sign}${shown}${unit}</div>`
                + `<div class="mz-month">${note} · ${stamp}</div>`;
+}
+
+// Badges written by a loader rather than by the generic pass still need to say
+// what they are, so anything left without a tooltip gets one from its own subtitle.
+function titleBadges() {
+  document.querySelectorAll('.mz-corner-badge').forEach(b => {
+    if (b.title || !b.innerHTML.trim()) return;
+    const note = ((b.querySelector('.mz-month') || {}).textContent || '');
+    b.title =
+      /YoY/i.test(note)        ? 'Change against the same month a year earlier, at the newest reading'
+    : /widest gap/i.test(note) ? 'The widest gap between the two sides on this card'
+    : /confirmed/i.test(note)  ? 'How many of the chains below are confirmed by the live data'
+    : /threshold/i.test(note)  ? 'How many of the decision thresholds are currently met'
+    : /Ø/.test(note)           ? 'Change in the cross-country average between the two years shown'
+    :                            'The headline reading of this card';
+  });
 }
 
 function applyAutoBadges() {
@@ -2877,6 +2926,7 @@ async function loadAll() {
   if (stale(seq)) return; // a newer range was picked while this load was in flight
 
   applyAutoBadges();
+  titleBadges();
   pruneUnitChips();
   decorateChips();
   alignNewsMarkers();
@@ -4273,7 +4323,11 @@ SEGMENTS.forEach(g => { if (!Array.isArray(SELECTED[g.id])) SELECTED[g.id] = [];
 function saveSel() { try { localStorage.setItem(SEL_KEY, JSON.stringify({ selected: SELECTED, segOf: SEG_OF })); } catch (e) {} }
 function segOf(id) { return SEG_OF[id] || SEGMENTS[0].id; }
 function isOn(id) { return SEGMENTS.some(g => SELECTED[g.id].includes(id)); }
-function totalSelected() { return SEGMENTS.reduce((n, g) => n + SELECTED[g.id].length, 0); }
+// Distinct indicators, not placements: one indicator shown in all three segments
+// is still one indicator the reader picked.
+function totalSelected() {
+  return new Set(SEGMENTS.flatMap(g => SELECTED[g.id])).size;
+}
 
 // ---------- Eurostat fetcher (direct — this API does send CORS headers) ----------
 // Each registry query pins every dimension except time to a single value, so the
@@ -4326,17 +4380,57 @@ async function fetchIndicator(ind, months) {
 const STATUS_LABEL = { live: 'Live', lag: 'Lagging', none: 'No free source' };
 const STATUS_CLASS = { live: 'expansion', lag: 'stable', none: 'contraction' };
 
-function atlasFilters() {
-  return {
-    q: (document.getElementById('atlas-q').value || '').toLowerCase().trim(),
-    sec: document.getElementById('atlas-sector').value,
-    geo: document.getElementById('atlas-geo').value,
-    status: document.getElementById('atlas-status').value,
-    cyc: document.getElementById('atlas-cyc').value,
-    evid: document.getElementById('atlas-evid').value,
-    vin: document.getElementById('atlas-vin').value,
-    meth: document.getElementById('atlas-meth').value,
-  };
+// ============================================================
+//  ATLAS COLUMN FILTERS
+//  Excel-style autofilter: every column carries its own dropdown with a search box
+//  and a checkbox per distinct value. As in Excel the list a column offers is built
+//  from the rows that pass every OTHER column's filter, so the options narrow as you
+//  go and never offer a value that would return nothing.
+// ============================================================
+const ATLAS_COLS = [
+  { key:'show', min:94,   label:'Show',              cls:'c-show',    val:i => isOn(i.id) ? 'Selected' : 'Not selected' },
+  { key:'seg',    label:'Add to segment',    cls:'c-seg', min:230, noFilter:true },
+  { key:'name',   label:'Indicator',         cls:'c-ind', min:260, val:i => i.name },
+  { key:'sec',    label:'Sector',            val:i => i.sec },
+  { key:'meth',   label:'How it is collected', cls:'c-verdict', min:176,
+    val:i => METHOD_NAME[ATLAS_METHOD[i.id]] || 'Not classified' },
+  { key:'cyc',    label:'Cycle position',    cls:'c-verdict', min:146,
+    val:i => { const V = atlasVerdict(i.id); return V.cyc ? CYCLE_NAME[V.cyc] : 'Not reviewed'; } },
+  { key:'evid',   label:'Evidence strength', cls:'c-verdict',
+    val:i => { const V = atlasVerdict(i.id); return V.ev ? EVID_TIER[evidClass(V.ev)] : 'Not reviewed'; } },
+  { key:'vin',    label:'Evidence vintage',  cls:'c-verdict',
+    val:i => { const V = atlasVerdict(i.id); return V.vin ? VIN_TIER[vintageClass(V.vin[0])] : 'Not reviewed'; } },
+  { key:'geo', min:106,    label:'Country',           val:i => i.geo },
+  { key:'src', min:98,    label:'Source',            val:i => i.src === 'none' ? '—' : i.src === 'fred' ? 'FRED' : 'Eurostat' },
+  { key:'ref',    label:'Series / dataset',  val:i => i.series || i.ds || '—' },
+  { key:'freq', min:88,   label:'Freq',              val:i => i.freq },
+  { key:'latest', min:94, label:'Latest',            val:i => i.latest },
+  { key:'status', min:98, label:'Status',            val:i => STATUS_LABEL[i.status] },
+];
+const ATLAS_FILTER = {};        // column key -> Set of accepted values, absent means all
+
+function atlasQuery() {
+  return (document.getElementById('atlas-q').value || '').toLowerCase().trim();
+}
+// Rows passing every filter, optionally ignoring one column so that column can
+// offer the values still reachable from the current selection.
+function atlasRows(exceptKey) {
+  const q = atlasQuery();
+  return ATLAS.filter(i => {
+    for (const c of ATLAS_COLS) {
+      if (c.noFilter || c.key === exceptKey) continue;
+      const set = ATLAS_FILTER[c.key];
+      if (set && set.size && !set.has(String(c.val(i)))) return false;
+    }
+    if (q) {
+      const hay = `${i.name} ${i.geo} ${i.sec} ${i.series || i.ds || ''} ${i.src} ${i.note || ''}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+}
+function atlasActiveFilters() {
+  return ATLAS_COLS.filter(c => ATLAS_FILTER[c.key] && ATLAS_FILTER[c.key].size).length;
 }
 
 // ============================================================
@@ -4413,48 +4507,52 @@ const VIN_TIER = { 'vin-now':'Current', 'vin-dated':'Dated', 'vin-old':'Older' }
 const EVID_TIER = { 'evid-strong':'Strong', 'evid-solid':'Solid', 'evid-partial':'Mixed', 'evid-none':'None' };
 
 function renderAtlas() {
-  const f = atlasFilters();
-  const rows = ATLAS.filter(i => {
-    if (f.sec && i.sec !== f.sec) return false;
-    if (f.geo && i.geo !== f.geo) return false;
-    if (f.status && i.status !== f.status) return false;
-    const V = atlasVerdict(i.id);
-    if (f.cyc  && (V.cyc || 'none') !== f.cyc) return false;
-    if (f.evid && (V.ev ? evidClass(V.ev) : 'none') !== f.evid) return false;
-    if (f.vin  && (V.vin ? vintageClass(V.vin[0]) : 'none') !== f.vin) return false;
-    if (f.meth && (ATLAS_METHOD[i.id] || 'none') !== f.meth) return false;
-    if (f.q) {
-      const hay = `${i.name} ${i.geo} ${i.sec} ${i.series || i.ds || ''} ${i.src} ${i.note || ''}`.toLowerCase();
-      if (!hay.includes(f.q)) return false;
-    }
-    return true;
-  });
-
+  const rows = atlasRows();
   const host = document.getElementById('atlas-table');
-  if (!rows.length) { host.innerHTML = '<div class="atlas-empty">No indicators match those filters.</div>'; updateCount(); return; }
 
-  let html = '<table class="atlas-tbl"><thead><tr>' +
-    '<th class="c-show">Show</th><th>Indicator</th><th>How it is collected</th><th>Cycle position</th><th>Evidence strength</th><th>Evidence vintage</th>' +
-    '<th>Add to segment</th><th>Country</th><th>Source</th>' +
-    '<th>Series / dataset</th><th>Freq</th><th>Latest <span style="font-weight:400;text-transform:none;letter-spacing:0">(checked 24 Aug)</span></th><th>Status</th></tr></thead><tbody>';
+  const clearBtn = document.getElementById('atlas-clearfilters');
+  if (clearBtn) clearBtn.hidden = atlasActiveFilters() === 0;
 
-  let lastSec = null;
+  let html = '<table class="atlas-tbl"><thead><tr>'
+    + ATLAS_COLS.map(c => {
+        const on = ATLAS_FILTER[c.key] && ATLAS_FILTER[c.key].size;
+        return `<th class="${c.cls || ''}${on ? ' col-filtered' : ''}"${c.min ? ` style="min-width:${c.min}px"` : ''}>`
+          + `<span class="th-label">${c.label}</span>`
+          + (c.noFilter ? '' :
+             `<button class="th-filter${on ? ' on' : ''}" data-col="${c.key}"`
+             + ` title="Filter this column" aria-label="Filter ${c.label}">`
+             + `<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1.5 2.5h9L7 6.6V10L5 9V6.6z"/></svg></button>`)
+          + '</th>';
+      }).join('')
+    + '</tr></thead><tbody>';
+
+  if (!rows.length) {
+    host.innerHTML = html + `<tr><td colspan="${ATLAS_COLS.length}"><div class="atlas-empty">No indicators match those filters.</div></td></tr></tbody></table>`;
+    wireAtlasHeader(host);
+    updateCount();
+    return;
+  }
+
   rows.forEach(i => {
-    if (i.sec !== lastSec) { html += `<tr class="atlas-group"><td colspan="13">${i.sec}</td></tr>`; lastSec = i.sec; }
     const on = isOn(i.id);
     const V = atlasVerdict(i.id);
     const selectable = i.src !== 'none';
     const target = segOf(i.id);
     const ref = i.series ? `<code>${i.series}</code>` : i.ds ? `<code>${i.ds}</code>` : '<span class="dt">—</span>';
-    const opts = SEGMENTS.map(g => `<option value="${g.id}"${g.id === target ? ' selected' : ''}>${g.name}</option>`).join('');
+    const segBoxes = SEGMENTS.map(g => `<label class="seg-box" title="Show this indicator in ${g.name}">`
+      + `<input type="checkbox" data-seg-for="${i.id}" data-seg="${g.id}"`
+      + `${inSegment(i.id, g.id) ? ' checked' : ''}${selectable ? '' : ' disabled'}`
+      + ` aria-label="${i.name} in ${g.name}">`
+      + `<span>${g.name.replace(/ Machinery$/, '')}</span></label>`).join('');
     html += `<tr class="${on ? 'is-on' : ''}" data-row="${i.id}">
       <td class="c-show"><label class="sw"><input type="checkbox" data-id="${i.id}" ${on ? 'checked' : ''} ${selectable ? '' : 'disabled'} aria-label="Show ${i.name}"><span class="track"></span></label></td>
-      <td><div class="ind-name">${i.name}</div>${i.note ? `<div class="ind-note">${i.note}</div>` : ''}</td>
+      <td class="c-seg">${segBoxes}</td>
+      <td class="c-ind"><div class="ind-name">${i.name}</div>${i.note ? `<div class="ind-note">${i.note}</div>` : ''}</td>
+      <td class="c-sector">${i.sec}</td>
       <td class="c-verdict">${ATLAS_METHOD[i.id] ? methodChip(ATLAS_METHOD[i.id]) : '<span class="unrev">Not classified</span>'}</td>
       <td class="c-verdict">${V.cyc ? cycleBadge(V.cyc) : '<span class="unrev">Not reviewed</span>'}</td>
       <td class="c-verdict">${V.ev ? evidChip(V.ev, V.key) : '<span class="unrev">Not reviewed</span>'}</td>
       <td class="c-verdict">${V.vin ? vintageChip(V.vin[0], V.vin[1]) : '<span class="unrev">Not reviewed</span>'}</td>
-      <td class="c-seg"><select class="seg-pick" data-seg-for="${i.id}" ${selectable ? '' : 'disabled'} aria-label="Segment for ${i.name}">${opts}</select></td>
       <td>${i.geo}</td>
       <td class="dt">${i.src === 'none' ? '—' : i.src === 'fred' ? 'FRED' : 'Eurostat'}</td>
       <td>${ref}</td>
@@ -4468,14 +4566,111 @@ function renderAtlas() {
 
   initEvidenceChips();      // the strength chips in this table open their review too
   initMethodChips();
+  wireAtlasHeader(host);
 
   host.querySelectorAll('input[type=checkbox][data-id]').forEach(cb => {
     cb.addEventListener('change', () => toggleIndicator(cb.dataset.id, cb.checked));
   });
-  host.querySelectorAll('select[data-seg-for]').forEach(sel => {
-    sel.addEventListener('change', () => moveIndicator(sel.dataset.segFor, sel.value));
+  host.querySelectorAll('input[data-seg-for]').forEach(cb => {
+    cb.addEventListener('change', () => setSegment(cb.dataset.segFor, cb.dataset.seg, cb.checked));
   });
   updateCount();
+}
+
+function wireAtlasHeader(host) {
+  host.querySelectorAll('.th-filter').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); openColumnFilter(btn); });
+  });
+}
+
+// ---- the dropdown --------------------------------------------------------
+// Rendered on the body rather than inside the table: the table scrolls
+// horizontally, and a panel inside an overflow container gets clipped.
+let atlasPanel = null;
+function closeColumnFilter() {
+  if (atlasPanel) { atlasPanel.remove(); atlasPanel = null; }
+  document.querySelectorAll('.th-filter[aria-expanded="true"]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+}
+document.addEventListener('click', e => { if (!e.target.closest('.col-panel, .th-filter')) closeColumnFilter(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeColumnFilter(); });
+
+function openColumnFilter(btn) {
+  const wasOpen = btn.getAttribute('aria-expanded') === 'true';
+  closeColumnFilter();
+  if (wasOpen) return;
+
+  const col = ATLAS_COLS.find(c => c.key === btn.dataset.col);
+  if (!col) return;
+  const chosen = ATLAS_FILTER[col.key] || new Set();
+
+  // Values still reachable given every other column's filter, as Excel does it
+  const counts = new Map();
+  atlasRows(col.key).forEach(i => {
+    const v = String(col.val(i));
+    counts.set(v, (counts.get(v) || 0) + 1);
+  });
+  const values = [...counts.keys()].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+  const pan = document.createElement('div');
+  pan.className = 'col-panel';
+  pan.innerHTML = `
+    <div class="cp-head">${col.label}</div>
+    <input class="cp-search" type="text" placeholder="Search values" aria-label="Search values">
+    <label class="cp-row cp-all"><input type="checkbox" class="cp-allbox"><span>(Select all)</span></label>
+    <div class="cp-list">${values.map(v => `
+      <label class="cp-row"><input type="checkbox" value="${v.replace(/"/g, '&quot;')}"
+        ${(!chosen.size || chosen.has(v)) ? 'checked' : ''}><span>${escapeHTML(v)}</span>
+        <em>${counts.get(v)}</em></label>`).join('')}</div>
+    <div class="cp-foot">
+      <button class="cp-clear">Clear</button>
+      <span class="cp-count"></span>
+    </div>`;
+  document.body.appendChild(pan);
+
+  const boxes = () => [...pan.querySelectorAll('.cp-list input')];
+  const allBox = pan.querySelector('.cp-allbox');
+  const countEl = pan.querySelector('.cp-count');
+
+  const sync = () => {
+    const vis = boxes().filter(b => b.closest('.cp-row').style.display !== 'none');
+    const on = vis.filter(b => b.checked).length;
+    allBox.checked = on === vis.length && vis.length > 0;
+    allBox.indeterminate = on > 0 && on < vis.length;
+    countEl.textContent = `${on} of ${values.length}`;
+  };
+  const apply = () => {
+    const on = boxes().filter(b => b.checked).map(b => b.value);
+    if (on.length === values.length) delete ATLAS_FILTER[col.key];   // all on means no filter
+    else ATLAS_FILTER[col.key] = new Set(on);
+    renderAtlas();
+  };
+
+  pan.querySelector('.cp-search').addEventListener('input', ev => {
+    const q = ev.target.value.toLowerCase();
+    boxes().forEach(b => { b.closest('.cp-row').style.display = b.value.toLowerCase().includes(q) ? '' : 'none'; });
+    sync();
+  });
+  allBox.addEventListener('change', () => {
+    boxes().filter(b => b.closest('.cp-row').style.display !== 'none').forEach(b => { b.checked = allBox.checked; });
+    sync(); apply();
+  });
+  pan.querySelector('.cp-list').addEventListener('change', () => { sync(); apply(); });
+  pan.querySelector('.cp-clear').addEventListener('click', () => {
+    delete ATLAS_FILTER[col.key];
+    closeColumnFilter();
+    renderAtlas();
+  });
+  pan.addEventListener('click', ev => ev.stopPropagation());
+
+  const r = btn.getBoundingClientRect();
+  let left = r.left + window.scrollX;
+  if (left + pan.offsetWidth > window.innerWidth - 12) left = window.innerWidth - pan.offsetWidth - 12;
+  pan.style.left = Math.max(12, left) + 'px';
+  pan.style.top = (r.bottom + window.scrollY + 4) + 'px';
+  btn.setAttribute('aria-expanded', 'true');
+  atlasPanel = pan;
+  sync();
+  pan.querySelector('.cp-search').focus();
 }
 
 function updateCount() {
@@ -4487,25 +4682,45 @@ function updateCount() {
   el.textContent = n ? `${n} selected — ${per}` : '0 selected';
 }
 
+// The Show switch is the master: on puts the indicator into its default segment if
+// it is nowhere yet, off removes it everywhere. Which segments it belongs to is
+// then a separate, multi-valued choice made in the Add to segment column.
 function toggleIndicator(id, on) {
-  const target = segOf(id);
-  SEGMENTS.forEach(g => {                          // never let one indicator sit in two segments
-    const k = SELECTED[g.id].indexOf(id);
-    if (k > -1) SELECTED[g.id].splice(k, 1);
-  });
-  if (on) { SELECTED[target].push(id); SEG_OF[id] = target; }
+  if (on) {
+    if (!isOn(id)) { const t = segOf(id); SELECTED[t].push(id); SEG_OF[id] = t; }
+  } else {
+    SEGMENTS.forEach(g => {
+      const k = SELECTED[g.id].indexOf(id);
+      if (k > -1) SELECTED[g.id].splice(k, 1);
+    });
+  }
+  afterSelectionChange(id);
+}
+
+// One segment at a time, so the same indicator can sit in all three
+function setSegment(id, segId, on) {
+  const list = SELECTED[segId];
+  const k = list.indexOf(id);
+  if (on && k < 0) { list.push(id); SEG_OF[id] = segId; }
+  if (!on && k > -1) list.splice(k, 1);
+  afterSelectionChange(id);
+}
+function inSegment(id, segId) { return (SELECTED[segId] || []).includes(id); }
+
+function afterSelectionChange(id) {
   saveSel();
   const row = document.querySelector(`tr[data-row="${id}"]`);
-  if (row) row.classList.toggle('is-on', on);
+  if (row) {
+    row.classList.toggle('is-on', isOn(id));
+    const master = row.querySelector('input[type=checkbox][data-id]');
+    if (master) master.checked = isOn(id);
+    row.querySelectorAll('input[data-seg-for]').forEach(cb => {
+      cb.checked = inSegment(cb.dataset.segFor, cb.dataset.seg);
+    });
+  }
   updateCount();
   SEGMENTS.forEach(g => renderSelection(g.id));
   renderCalendar();          // the Atlas selection is part of the calendar
-}
-
-// Changing the dropdown moves an already-enabled indicator to the other segment
-function moveIndicator(id, segId) {
-  SEG_OF[id] = segId;
-  if (isOn(id)) toggleIndicator(id, true); else { saveSel(); }
 }
 
 // ============================================================
@@ -4610,15 +4825,11 @@ function fmtUnit(v, unit) {
 
 // ---------- Atlas wiring ----------
 function initAtlas() {
-  const secSel = document.getElementById('atlas-sector');
-  const geoSel = document.getElementById('atlas-geo');
-  [...new Set(ATLAS.map(i => i.sec))].forEach(s => secSel.insertAdjacentHTML('beforeend', `<option value="${s}">${s}</option>`));
-  [...new Set(ATLAS.map(i => i.geo))].forEach(g => geoSel.insertAdjacentHTML('beforeend', `<option value="${g}">${g}</option>`));
-
-  ['atlas-q', 'atlas-sector', 'atlas-geo', 'atlas-status',
-   'atlas-cyc', 'atlas-evid', 'atlas-vin', 'atlas-meth'].forEach(id => {
-    const el = document.getElementById(id);
-    el.addEventListener(id === 'atlas-q' ? 'input' : 'change', renderAtlas);
+  // the sector and country lists now live in their own column dropdowns
+  document.getElementById('atlas-q').addEventListener('input', renderAtlas);
+  document.getElementById('atlas-clearfilters').addEventListener('click', () => {
+    Object.keys(ATLAS_FILTER).forEach(k => delete ATLAS_FILTER[k]);
+    renderAtlas();
   });
 
   document.getElementById('atlas-clear').addEventListener('click', () => {
@@ -5729,7 +5940,6 @@ function initNewsMarkers() {
       + `<path d="M4.3 6.1h3.1M4.3 8.4h7.4M4.3 10.7h5.2"/></svg>`
       + `<span class="nd-lbl">News</span>`
       + `<span class="nd-date">${newsDateShort(newest.d)}</span>`
-      + (items.length > 1 ? `<span class="nd-n">${items.length}</span>` : '')
       + (fresh ? '<span class="nd-live" aria-hidden="true"></span>' : '');
     const fire = e => { e.stopPropagation();
       if (mark.getAttribute('aria-expanded') === 'true') closeInfo(); else openNewsPop(mark, id); };
@@ -6116,9 +6326,24 @@ const CHIP_SECTIONS = new Set(['cost development','economic cycle','supply chain
   'industry data','agricultural','packaging machinery','metal working machinery','agricultural machinery']);
 const CHIP_SOURCE_RE = /fred|eurostat|oecd|world bank|ny fed|\becb\b|\bimf\b|ice bofa|cass|destatis|usitc|s&p|ism|lme|freightos|eia|\bwto\b|ifo/i;
 
+// Every chip says what it is on hover. Four of them carried a tooltip already
+// (cycle position, evidence strength, vintage, collection method); these are the
+// rest, so no chip on any card is left unexplained.
+const CHIP_TIP = {
+  geo:     'Countries and regions this indicator covers',
+  section: 'The dashboard section this indicator belongs to',
+  source:  'Who publishes the data behind this card',
+  unit:    'The unit the values on this chart are expressed in',
+  warn:    'A caveat about the data itself, not one of its properties',
+};
+
 function decorateChips(root) {
   (root || document).querySelectorAll('.sel-meta .sel-chip, .news-geo-chip').forEach(chip => {
-    if (chip.dataset.icon || chip.classList.contains('warn')) return;   // warn already has its dot
+    if (chip.classList.contains('warn')) {
+      if (!chip.title) chip.title = CHIP_TIP.warn;
+      return;                                        // warn already carries its own dot
+    }
+    if (chip.dataset.icon) return;
     const text = chip.textContent.trim();
     chip.dataset.icon = '1';
 
@@ -6129,11 +6354,13 @@ function decorateChips(root) {
       chip.innerHTML = parts.map(part => /^[·+,/]$/.test(part)
         ? `<span class="chip-sep">${part}</span>`
         : `<span class="chip-geo">${flag(GEO_CODE[part.toLowerCase()])}${part}</span>`).join('');
+      if (!chip.title) chip.title = CHIP_TIP.geo;
       return;
     }
     const kind = CHIP_SECTIONS.has(text.toLowerCase()) ? 'section'
                : CHIP_SOURCE_RE.test(text) ? 'source' : 'unit';
     chip.innerHTML = CHIP_IC[kind] + `<span>${text}</span>`;
+    if (!chip.title) chip.title = CHIP_TIP[kind];
   });
 }
 
