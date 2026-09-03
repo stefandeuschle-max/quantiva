@@ -1,8 +1,8 @@
-# Netlify configuration for Weitblick
+# Netlify configuration for Weitblick / Quantiva
 #
-# publish = "site" is the important line. Only that folder is uploaded, which
-# keeps serve.py (it carries the API key) and Evidence-Sources (publisher PDFs)
-# off the public site. Never change this to "." .
+# publish = "site" is the important line: only that folder is uploaded, so
+# serve.py, the Netlify function source and anything else in the repo stay off
+# the public site. Never change this to "." .
 
 [build]
   publish = "site"
@@ -13,3 +13,20 @@
   from = "/"
   to = "/quantiva.html"
   status = 200
+
+# Security headers for every response.
+#
+# Chart.js is served from site/ now, so no external script origin is needed.
+# script-src / style-src still allow 'unsafe-inline' because the dashboard ships
+# its app logic in one inline <script> and generates inline style="" attributes;
+# without a build step there is no nonce/hash to use instead. The CSP still
+# blocks external and injected script origins, eval, framing and plugins.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.worldbank.org https://sdmx.oecd.org https://data-api.ecb.europa.eu https://ec.europa.eu; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "geolocation=(), microphone=(), camera=(), interest-cohort=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
