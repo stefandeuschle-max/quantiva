@@ -4821,13 +4821,20 @@ async function fetchUSITC(h) {
 const OECD_BASE = 'https://sdmx.oecd.org/public/rest/data';
 async function oecdFetch(flow, key, n) {
   try {
-    // Through the proxy: sdmx.oecd.org is the only upstream this dashboard uses
-    // that does not reliably send CORS headers, and when it refuses the browser
-    // the affected cards lose their non-European series without saying so.
+    // Through the proxy first: sdmx.oecd.org is the only upstream this dashboard
+    // uses that does not reliably send CORS headers, and when it refuses the
+    // browser the affected cards lose their non-European series without saying so.
+    // OECD does block the proxy in production, though — it answers 429 to
+    // Netlify's shared egress addresses while serving an ordinary client IP
+    // normally — so a refused proxy falls back to calling the host directly.
+    // One of the two paths is open in every environment this runs in.
     const q = `flow=${encodeURIComponent(flow)}&key=${encodeURIComponent(key)}&n=${n + 8}`;
-    const res = FRED_LIVE
-      ? await fetch(`/api/oecd?${q}`)
-      : await fetch(`${OECD_BASE}/${flow}/${key}?format=jsondata&lastNObservations=${n + 8}`);
+    const direct = `${OECD_BASE}/${flow}/${key}?format=jsondata&lastNObservations=${n + 8}`;
+    let res = null;
+    if (FRED_LIVE) {
+      try { res = await fetch(`/api/oecd?${q}`); } catch { res = null; }
+    }
+    if (!res || !res.ok) res = await fetch(direct);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const txt = await res.text();
     if (txt.trim() === 'NoResultsFound') return null;   // OECD returns plain text, not JSON
