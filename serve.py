@@ -30,6 +30,9 @@ Optional:
 import csv
 import io
 import json
+import re
+import time as _time
+import threading
 import os
 import sys
 import urllib.error
@@ -51,7 +54,8 @@ PORT = int(os.environ.get("PORT", "8000"))
 # Key resolution order:
 #   1. FRED_API_KEY environment variable
 #   2. ~/.fred_api_key
-# No key is stored in this file, so it is safe to commit to a public repository.
+# No key is stored in this file: the repository is public, so a hardcoded key
+# would be published on GitHub. The local key lives in ~/.fred_api_key.
 KEY_FILE = Path.home() / ".fred_api_key"
 
 
@@ -159,6 +163,127 @@ def fetch_usitc(hts_from: str, hts_to: str) -> bytes:
     return body
 
 
+
+# ---------------------------------------------------------------------------
+# GDELT news lookup.
+# GDELT needs no API key, but it throttles hard (one request every five seconds)
+# and its throttle response carries no CORS header, so a browser calling it
+# directly sees a CORS failure rather than a rate limit. Routing it through here
+# fixes both: the server paces the calls and caches the answers for an hour.
+# ---------------------------------------------------------------------------
+_NEWS_CACHE = {}          # company -> (timestamp, payload)
+_NEWS_TTL = 3600
+_NEWS_LAST = [0.0]
+_NEWS_GAP = 7.0          # GDELT throttles below this and its 429 carries no CORS header
+_NEWS_LOCK = threading.Lock()
+_NEWS_JUNK = re.compile(
+    r"dailypolitical|marketbeat|pr-inside|247wallst|stocknews|zacks|simplywall"
+    r"|tipranks|insidertrades|etfdailynews|newsheater|themarketsdaily|americanbankingnews",
+    re.I)
+
+
+_OECD_CACHE = {}
+_OECD_TTL = 1800
+_OECD_HOST = "sdmx.oecd.org"
+
+def fetch_oecd(flow: str, key: str, last_n: str) -> bytes:
+    """OECD SDMX, proxied.
+
+    The browser called this host directly and it is the only upstream that does
+    not reliably send CORS headers: during testing all four calls failed at once
+    and the affected cards silently lost their non-European series. Going through
+    the proxy removes the browser from that decision entirely.
+    """
+    cache_key = f"{flow}|{key}|{last_n}"
+    hit = _OECD_CACHE.get(cache_key)
+    if hit and _time.time() - hit[0] < _OECD_TTL:
+        return hit[1]
+    url = (f"https://{_OECD_HOST}/public/rest/data/{urllib.parse.quote(flow, safe=',@:')}"
+           f"/{urllib.parse.quote(key, safe='+.:')}"
+           f"?format=jsondata&lastNObservations={last_n}")
+    # No Accept header on purpose: asking for the SDMX media type makes OECD reply
+    # with the 1.0 schema, which nests the structure differently from the 2.0 shape
+    # the browser used to receive. Sending none keeps the payload identical to
+    # what the page parsed before the proxy existed.
+    req = urllib.request.Request(url, headers={"User-Agent": "Quantiva/1.0"})
+    with urllib.request.urlopen(req, timeout=30) as r:
+        raw = r.read()
+    _OECD_CACHE[cache_key] = (_time.time(), raw)
+    return raw
+
+
+def fetch_news(company: str) -> bytes:
+    now = _time.time()
+    hit = _NEWS_CACHE.get(company)
+    if hit and now - hit[0] < _NEWS_TTL:
+        return hit[1]
+
+    with _NEWS_LOCK:                      # GDELT counts requests, not callers
+        wait = _NEWS_GAP - (_time.time() - _NEWS_LAST[0])
+        if wait > 0:
+            _time.sleep(wait)
+        _NEWS_LAST[0] = _time.time()
+
+        # A bare company name pulls in anything that shares a token: a search for
+        # TRUMPF returned an article about Trump. The query is narrowed to the
+        # industry, and every candidate must still carry the name in its title.
+        q = urllib.parse.urlencode({
+            # sourcelang:eng because the dashboard is read in English: without it a
+            # Danish or Romanian rewrite of the same release wins on recency.
+            "query": f'"{company}" sourcelang:eng '
+                     f'(machinery OR manufacturing OR industrial '
+                     f'OR earnings OR revenue OR results OR orders OR factory)',
+            "mode": "artlist", "maxrecords": "20",
+            "sort": "datedesc", "format": "json",
+        })
+        url = f"https://api.gdeltproject.org/api/v2/doc/doc?{q}"
+        req = urllib.request.Request(url, headers={"User-Agent": "Quantiva/1.0"})
+        raw = b""
+        for attempt in range(2):          # one retry: a throttle is common, not fatal
+            try:
+                with urllib.request.urlopen(req, timeout=25) as r:
+                    raw = r.read()
+                break
+            except Exception:
+                if attempt == 0:
+                    _time.sleep(_NEWS_GAP)
+                    _NEWS_LAST[0] = _time.time()
+
+    try:
+        arts = json.loads(raw.decode("utf-8", "replace")).get("articles") or []
+    except json.JSONDecodeError:
+        arts = []                          # a throttle page is not JSON
+
+    # The name has to appear in the headline, otherwise the article is about
+    # something else that merely mentions the company somewhere in the body.
+    needle = company.lower().split(" & ")[0].split(" corporation")[0].strip()
+    pick = None
+    for a in arts:
+        title = a.get("title") or ""
+        if not title or not a.get("url"):
+            continue
+        if _NEWS_JUNK.search(a.get("domain", "")):
+            continue
+        if needle not in title.lower():
+            continue
+        pick = a
+        break
+
+    if pick:
+        sd = str(pick.get("seendate", ""))
+        payload = json.dumps({
+            "company": company,
+            "date": f"{sd[0:4]}-{sd[4:6]}-{sd[6:8]}" if len(sd) >= 8 else "",
+            "title": " ".join(pick["title"].split()),
+            "url": pick["url"],
+            "domain": pick.get("domain", ""),
+        }).encode()
+    else:
+        payload = json.dumps({"company": company, "empty": True}).encode()
+
+    _NEWS_CACHE[company] = (_time.time(), payload)
+    return payload
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
@@ -193,6 +318,31 @@ class Handler(SimpleHTTPRequestHandler):
                 return self._send_json(fetch_usitc(hts_from, hts_to))
             except Exception as exc:
                 return self._error(502, f"Could not reach USITC: {exc}")
+
+        if parsed.path == "/api/news":
+            company = (query.get("company") or "").strip()
+            if not company or len(company) > 80:
+                return self._error(400, "Missing or oversized parameter: company")
+            try:
+                return self._send_json(fetch_news(company))
+            except Exception:
+                # The card carries a stored headline, so a failed lookup is a
+                # non-event rather than an error worth surfacing.
+                return self._send_json(json.dumps({"company": company, "empty": True}).encode())
+
+        if parsed.path == "/api/oecd":
+            flow = (query.get("flow") or "").strip()
+            key = (query.get("key") or "").strip()
+            last_n = (query.get("n") or "").strip()
+            if not flow or not key or not last_n.isdigit():
+                return self._error(400, "Missing or invalid parameter: flow, key, n")
+            if not re.fullmatch(r"[A-Za-z0-9_,.@\-]{1,120}", flow) \
+               or not re.fullmatch(r"[A-Za-z0-9_+.:\-]{1,200}", key):
+                return self._error(400, "flow or key contains characters that are not allowed")
+            try:
+                return self._send_json(fetch_oecd(flow, key, last_n))
+            except Exception as exc:
+                return self._error(502, f"Could not reach OECD: {exc}")
 
         if parsed.path != "/api/fred":
             return super().do_GET()
